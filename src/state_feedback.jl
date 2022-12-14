@@ -1,30 +1,21 @@
 using Sockets
 
-# errormonitor(@async begin
-#     @info "Waiting for connection"
-#     server = listen(ip"192.168.144.1",42422)
-
+# @async begin
+#     udpsock = UDPSocket()
+#     bind(udpsock,ip"127.0.0.1",2000)
 #     while true
-#         sock = accept(server)
-#         @info "Connection accepted"
-#         @async while isopen(sock)
-#             str = readline(sock, keep=false)
-#             @info "Data received: " * str
-#         end
+#       println(bytestring(recv(udpsock)))
 #     end
-# end)
+# end
 
-function test()
-    @info "Waiting for connection"
-    server = listen(IPv4(0),42422)
-
-    while true
-        sock = accept(server)
-        @info "Connection accepted"
-        while isopen(sock)
-            str = readline(sock, keep=false)
-            @info "Data received: " * str
-        end
-    end
+function read_udp_once()
+    udpsock = UDPSocket()
+    bind(udpsock,IPv4(0),42422)
+    @info "UDP socket opened"
+    data = recv(udpsock)
+    io = IOBuffer(data)
+    str = read(io, String)
+    @info "Data received: " * str
+    close(udpsock)
 end
-test()
+read_udp_once()
