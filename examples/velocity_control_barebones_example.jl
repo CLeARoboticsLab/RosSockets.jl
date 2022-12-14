@@ -2,19 +2,20 @@ using RosSockets
 
 function run_example()
     
+    ip = "192.168.88.128"   # ip address of the host of the ROS node
+    port = 42421            # port to connect on
+    timestep = 0.5          # duration of each timestep (sec)
+    length = 10             # length of the control sequence
+
     # open a connection to the ROS node
-    ip = "192.168.88.128"
-    port = 42421
     robot_connection = open_robot_connection(ip, port)
     
-    # create a sequence of 10 control inputs and send to the node
-    timesteps = 10
-    control_sequence = [[0.1, 0.25] for _ in 1:timesteps]
+    # create a sequence of identical control inputs and send to the node
+    control_sequence = [[0.1, 0.25] for _ in 1:length]
     send_control_commands(robot_connection, control_sequence)
 
     # sleep for the time it takes to execute the control sequence
-    cycle_time = 0.5
-    duration = cycle_time*timesteps
+    duration = timestep*length
     sleep(duration)
     
     # Close the connection to the ROS node.
