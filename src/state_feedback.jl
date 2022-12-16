@@ -1,3 +1,21 @@
+mutable struct FeedbackData
+    position::Vector{Float64}
+    orientation::Vector{Float64}
+    linear_vel::Vector{Float64}
+    angular_vel::Vector{Float64}
+
+    function FeedbackData(data::Dict)
+        position = data["position"]
+        orientation = data["orientation"]
+        linear_vel = data["linear_vel"]
+        angular_vel = data["angular_vel"]
+        return new(position,
+                    orientation,
+                    linear_vel,
+                    angular_vel)
+    end
+end
+
 mutable struct FeedbackConnection
     socket::Sockets.UDPSocket
     task::Task
@@ -60,10 +78,11 @@ end
     receive_feedback_data(feedback_connection::FeedbackConnection, 
         timeout::Real = 10.0)
 
-Waits for data to arrive from the ROS node and returns a tuple of the data:
-position, orientation, linear_vel, angular_vel. This function blocks execution
-while waiting, up to the timout duration provided. If the timeout duration
-elapses without the arrival of data, throws a TimeoutError exception.
+Waits for data to arrive from the ROS node and returns a struct of the data with
+the following fields: position, orientation, linear_vel, angular_vel. This
+function blocks execution while waiting, up to the timout duration provided. If
+the timeout duration elapses without the arrival of data, throws a TimeoutError
+exception.
 
 # Arguments
 - `feedback_connection`: the `FeedbackConnection` obtained from
@@ -75,17 +94,11 @@ function receive_feedback_data(feedback_connection::FeedbackConnection,
     _ = take!(feedback_connection.ready_channel)
     put!(feedback_connection.ready_channel, true)
     t = Timer(_ -> timeout_callback(feedback_connection), timeout)
-    position = nothing
-    orientation = nothing
-    linear_vel = nothing
-    angular_vel = nothing
+    feedback_data = nothing
     try
         payload = take!(feedback_connection.data_channel)
         data = JSON.parse(String(payload))
-        position = data["position"]
-        orientation = data["orientation"]
-        linear_vel = data["linear_vel"]
-        angular_vel = data["angular_vel"]
+        feedback_data = FeedbackData(data)
     catch e
         if typeof(e) != InvalidStateException
             close_feedback_connection(feedback_connection)
@@ -94,7 +107,7 @@ function receive_feedback_data(feedback_connection::FeedbackConnection,
     finally
         close(t)
     end
-    return position, orientation, linear_vel, angular_vel
+    return feedback_data
 end
 
 function timeout_callback(feedback_connection::FeedbackConnection)
