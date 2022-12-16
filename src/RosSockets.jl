@@ -9,7 +9,8 @@ export open_robot_connection,
     close_robot_connection
 
 include("state_feedback.jl")
-export open_feedback_connection,
+export FeedbackData,
+    open_feedback_connection,
     receive_feedback_data,
     close_feedback_connection
 

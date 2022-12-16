@@ -11,13 +11,13 @@ function run_example()
     # Wait for data to arrive from the ROS node. Execution is blocked while
     # waiting, up to the timout duration provided. If the timeout duration
     # elapses without the arrival of data, throws a TimeoutError exception.
-    data = receive_feedback_data(feedback_connection, timeout)
+    state = receive_feedback_data(feedback_connection, timeout)
 
     # Print each data field to console
-    println("Position: $(data.position)")
-    println("Orientation (quaternion): $(data.orientation)")
-    println("Linear Velocity: $(data.linear_vel)")
-    println("Angular Velocity: $(data.angular_vel)")
+    println("Position: $(state.position)")
+    println("Orientation (quaternion): $(state.orientation)")
+    println("Linear Velocity: $(state.linear_vel)")
+    println("Angular Velocity: $(state.angular_vel)")
 
     # Close the listener
     close_feedback_connection(feedback_connection)
