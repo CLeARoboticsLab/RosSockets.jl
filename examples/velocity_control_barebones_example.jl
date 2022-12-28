@@ -1,8 +1,10 @@
+# In this example, a simple control sequence is generated and sent to a robot.
+
 using RosSockets
 
 function run_example()
     
-    ip = "192.168.88.128"   # ip address of the host of the ROS node
+    ip = "192.168.1.135"    # ip address of the host of the ROS node
     port = 42421            # port to connect on
     timestep = 0.5          # duration of each timestep (sec)
     length = 10             # length of the control sequence
