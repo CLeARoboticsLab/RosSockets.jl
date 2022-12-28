@@ -1,3 +1,5 @@
+# In this example, a simple control sequence is generated and sent to a robot.
+
 using RosSockets
 
 function run_example()

@@ -1,3 +1,7 @@
+# In this example, a listener for feedback data from a ROS node is opened and
+# the program waits for data to arrive. When data arrives, the data is printed,
+# and then the listener is closed.
+
 using RosSockets
 
 function run_example()
