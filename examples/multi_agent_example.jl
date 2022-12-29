@@ -1,15 +1,22 @@
 using RosSockets
 
-const ip = "192.168.1.135"  # ip address of the host of the ROS node
-const timestep = 0.1        # duration of each timestep (sec)
-const timeout = 10.0        # maximum seconds to wait for data with receive_feedback_data
+include("utils/common.jl")
 
+# constants applicable to all agents
+global const IP = "192.168.1.135"   # ip address of the host of the ROS node
+global const TIMESTEP = 0.1         # duration of each timestep (sec)
+global const TIMEOUT = 10.0         # maximum seconds to wait for data with receive_feedback_data
+global const GOAL_TOL = 0.1         # each agent must end within this distance from their goal
+global const LENGTH = 10            # length of the control sequence
+
+# struct to hold data for each agent
 mutable struct Robot
     goal_location::Vector{Float64}
     feedback_port::Integer
     control_port::Integer
     feedback_connection
     robot_connection
+    feedback_state
 
     function Robot(;goal_location::Vector{Float64},
                     feedback_port::Integer,
@@ -18,8 +25,40 @@ mutable struct Robot
                     feedback_port,
                     control_port,
                     nothing,
+                    nothing,
                     nothing)
     end
+end
+
+# receive feedback data for an agent
+function get_feedback_data!(agent)
+    agent.feedback_state = receive_feedback_data(agent.feedback_connection, TIMEOUT)
+end
+
+# receive feedback data for all agents
+function get_all_feedback_data!(agents)
+    for agent in agents
+        get_feedback_data!(agent)
+    end
+end
+
+# check if an agent has reached its goal
+function goal_reached(agent)
+    return dist_from_goal(agent.feedback_state, agent.goal_location) < GOAL_TOL
+end
+
+# check if all agents have reached their goals
+function goals_reached(agents)
+    reached = true
+    for agent in agents
+        reached = reached && goal_reached(agent)
+    end
+end
+
+# sends commands to move an agent forward
+function move_forward(agent)
+    commands = [[0.1, 0.0] for _ in 1:LENGTH]
+    send_control_commands(agent.robot_connection, commands)
 end
 
 function run_example()
@@ -39,7 +78,19 @@ function run_example()
 
     for agent in agents
         agent.feedback_connection = open_feedback_connection(agent.feedback_port)
-        agent.robot_connection = open_robot_connection(ip, agent.control_port)
+        agent.robot_connection = open_robot_connection(IP, agent.control_port)
+    end
+
+    # obtain initial state of all agents
+    get_all_feedback_data!(agents)
+
+    while !goals_reached(agents)
+        for agent in agents
+            get_feedback_data!(agent)
+            if !goal_reached(agent)
+                move_forward(agent)
+            end
+        end
     end
 
     for agent in agents
@@ -49,3 +100,7 @@ function run_example()
 end
 
 run_example()
+
+agent1.feedback_connection = open_feedback_connection(agent1.feedback_port)
+receive_feedback_data(agent1.feedback_connection, TIMEOUT)
+close_feedback_connection(agent1.feedback_connection)
