@@ -7,6 +7,7 @@
 using JuMP, Ipopt, Plots, LinearAlgebra, Rotations
 using RosSockets
 
+include("utils/common.jl")
 include("utils/nlp.jl")
 
 function run_example()
