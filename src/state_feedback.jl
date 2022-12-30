@@ -25,7 +25,7 @@ mutable struct FeedbackConnection
     function FeedbackConnection(port::Integer)
         @info "Starting feedback server on port $(port) ..."
         socket = UDPSocket()
-        bind(socket,IPv4(0),42422)
+        bind(socket,IPv4(0),port)
         data_channel = Channel(1)
         ready_channel = Channel{Bool}(1)
         put!(ready_channel, false)
