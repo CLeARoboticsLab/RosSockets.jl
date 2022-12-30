@@ -1,3 +1,8 @@
+# In this example, 3 robots are controlled. Each robot is eqiupped with state
+# feedback and is commanded to move forward until that robot reaches its goal
+# location.
+
+using LinearAlgebra, Rotations
 using RosSockets
 
 include("utils/common.jl")
@@ -53,6 +58,7 @@ function goals_reached(agents)
     for agent in agents
         reached = reached && goal_reached(agent)
     end
+    return reached
 end
 
 # sends commands to move an agent forward
@@ -62,20 +68,24 @@ function move_forward(agent)
 end
 
 function run_example()
-    agent1 = Robot(goal_location = [0.0, 2.0],
+
+    # create each agent
+    agent1 = Robot(goal_location = [0.0, 1.0],
                     feedback_port = 42431,
                     control_port = 42421)
 
-    agent2 = Robot(goal_location = [-3.0, 2.0],
+    agent2 = Robot(goal_location = [-2.0, 1.0],
                     feedback_port = 42432,
                     control_port = 42422)
 
-    agent3 = Robot(goal_location = [3.0, 2.0],
+    agent3 = Robot(goal_location = [2.0, 1.0],
                     feedback_port = 42433,
                     control_port = 42423)
 
+    # collection of agents                
     agents = [agent1, agent2, agent3]
 
+    # open feedback and velocity control connections for each agent
     for agent in agents
         agent.feedback_connection = open_feedback_connection(agent.feedback_port)
         agent.robot_connection = open_robot_connection(IP, agent.control_port)
@@ -84,6 +94,7 @@ function run_example()
     # obtain initial state of all agents
     get_all_feedback_data!(agents)
 
+    # command each agent that is not at their goal location to move forward
     while !goals_reached(agents)
         for agent in agents
             get_feedback_data!(agent)
@@ -93,6 +104,7 @@ function run_example()
         end
     end
 
+    # close connections for each agent
     for agent in agents
         close_robot_connection(agent.robot_connection)
         close_feedback_connection(agent.feedback_connection)
@@ -100,7 +112,3 @@ function run_example()
 end
 
 run_example()
-
-agent1.feedback_connection = open_feedback_connection(agent1.feedback_port)
-receive_feedback_data(agent1.feedback_connection, TIMEOUT)
-close_feedback_connection(agent1.feedback_connection)
