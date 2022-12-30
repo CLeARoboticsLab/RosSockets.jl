@@ -20,6 +20,6 @@ end
 
 function dist_from_goal(feedback_state::FeedbackData, goal_state)
     state = to_state_vec(feedback_state)
-    diff = goal_state - state
-    return norm(diff[1:2])
+    diff = goal_state[1:2] - state[1:2]
+    return norm(diff)
 end
