@@ -1,5 +1,7 @@
 # RosSockets.jl
 
+[![RosSockets](https://github.com/CLeARoboticsLab/RosSockets.jl/actions/workflows/test.yml/badge.svg)](https://github.com/CLeARoboticsLab/RosSockets.jl/actions/workflows/test.yml)
+
 Tools for sending and receiving information from ROS via TCP that can be used to control robots.
 This package is meant to communicate with the ROS nodes from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets).
 
