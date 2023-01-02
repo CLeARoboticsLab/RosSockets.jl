@@ -1,4 +1,4 @@
-function initialize_model(goal_state)
+function initialize_model(goal_state, timestep)
     x_f = goal_state[1]
     y_f = goal_state[2]
     v_f = goal_state[3]
@@ -8,7 +8,7 @@ function initialize_model(goal_state)
     R = 2
 
     T = 400
-    dt = .1
+    dt = timestep
     times = [k*dt for k in 0:T-1]
 
     v_max = 0.22
