@@ -10,7 +10,7 @@ function to_state_vec(feedback_state::FeedbackData)
     θ_0 = atan(heading[2],heading[1])
 
     v_0 = norm(feedback_state.linear_vel[1:2])
-    if abs(tan(feedback_state.linear_vel[2]/feedback_state.linear_vel[2]) -
+    if abs(atan(feedback_state.linear_vel[2],feedback_state.linear_vel[1]) -
         θ_0) > π/2
         v_0 = -v_0
     end
