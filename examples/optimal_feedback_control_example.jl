@@ -19,7 +19,11 @@ function run_example()
     goal_state = [x_f,y_f,v_f,θ_f]
 
     # initialize the solver
-    model = initialize_model(goal_state)
+    timestep = 0.1          # duration of each timestep (sec)
+    model = initialize_model(goal_state, timestep)
+
+    # begin without warm start so that first solve is cold
+    warm_start = false
 
     # initialize a plotter to display trajectory solution real-time
     display(plot(xlims=(-1,4),ylims=(-1,4),size=(600,600)))
@@ -32,7 +36,6 @@ function run_example()
     # open a connection to the ROS velocity control node
     ip = "192.168.1.135"    # ip address of the host of the ROS node
     control_port = 42421    # port to connect on
-    timestep = 0.1          # duration of each timestep (sec)
     robot_connection = open_robot_connection(ip, control_port)
 
     # obtain initial state of the robot
@@ -45,8 +48,11 @@ function run_example()
         feedback_state = receive_feedback_data(feedback_connection, timeout) 
         
         # compute control commands and send them
-        commands, trajectory = solve!(model,feedback_state)
+        commands, trajectory = solve!(model,feedback_state,warm_start)
         send_control_commands(robot_connection, commands)
+        
+        # future calls to solve! will be warm started
+        warm_start = true
 
         # plot solution trajectory
         display(plot(trajectory[:,1],trajectory[:,2],
