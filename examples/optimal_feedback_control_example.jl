@@ -22,6 +22,9 @@ function run_example()
     timestep = 0.1          # duration of each timestep (sec)
     model = initialize_model(goal_state, timestep)
 
+    # begin without warm start so that first solve is cold
+    warm_start = false
+
     # initialize a plotter to display trajectory solution real-time
     display(plot(xlims=(-1,4),ylims=(-1,4),size=(600,600)))
 
@@ -45,8 +48,11 @@ function run_example()
         feedback_state = receive_feedback_data(feedback_connection, timeout) 
         
         # compute control commands and send them
-        commands, trajectory = solve!(model,feedback_state)
+        commands, trajectory = solve!(model,feedback_state,warm_start)
         send_control_commands(robot_connection, commands)
+        
+        # future calls to solve! will be warm started
+        warm_start = true
 
         # plot solution trajectory
         display(plot(trajectory[:,1],trajectory[:,2],

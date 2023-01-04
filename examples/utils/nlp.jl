@@ -17,6 +17,8 @@ function initialize_model(goal_state, timestep)
     
     model = Model(Ipopt.Optimizer)
     set_optimizer_attribute(model, "max_iter", 100)
+    set_optimizer_attribute(model, "print_level", 1)
+    set_optimizer_attribute(model, "mu_strategy", "adaptive")
 
     @variables(model, begin
         x[1:T]
@@ -62,9 +64,15 @@ function initialize_model(goal_state, timestep)
     return model
 end
 
-function solve!(model, feedback_state::FeedbackData)
+function solve!(model, feedback_state::FeedbackData, warm_start=false)
 
     state = to_state_vec(feedback_state)
+
+    if warm_start
+        x = all_variables(model)
+        x_solution = value.(x)
+        set_start_value.(x, x_solution)
+    end
 
     fix(model[:x][1], state[1])
     fix(model[:y][1], state[2])
