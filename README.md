@@ -58,14 +58,15 @@ close_robot_connection(robot_connection)
 
 First, ensure the `/state_feedback` node from from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets) is running on the target.
 
-Open a listener for feedback data, setting a `port` to listen on which matches that of the node:
+Open a connection to the ROS node, setting `ip` and `port` to match that of the node:
 
 ```jl
+ip = "192.168.88.128"
 port = 42422
-feedback_connection = open_feedback_connection(port)
+feedback_connection = open_feedback_connection(ip, port)
 ```
 
-With an open listener, wait for data to arrive from the ROS node.
+With the connection open, wait for data to arrive from the ROS node.
 Execution is blocked while waiting, up to the timeout duration (seconds) provided.
 If the timeout duration elapses without the arrival of data, a TimeoutError exception is thrown.
 
@@ -76,7 +77,7 @@ state = receive_feedback_data(feedback_connection, timeout)
 
 `receive_feedback_data` returns a struct with the following fields: `position`, `orientation`, `linear_vel`, `angular_vel`.
 
-When complete with tasks, be sure to close the listener:
+When complete with tasks, be sure to close the connection:
 
 ```jl
 close_feedback_connection(feedback_connection)
