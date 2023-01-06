@@ -7,9 +7,8 @@ function initialize_model(goal_state, timestep)
     Q = 1
     R = 2
 
-    T = 400
     dt = timestep
-    times = [k*dt for k in 0:T-1]
+    T = Integer(round(40/dt))
 
     v_max = 0.22
     a_max = v_max

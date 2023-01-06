@@ -17,22 +17,18 @@ mutable struct FeedbackData
 end
 
 mutable struct FeedbackConnection
-    socket::Sockets.UDPSocket
     task::Task
+    command_channel::Channel{Any}
     data_channel::Channel{Any}
-    ready_channel::Channel{Bool}
 
-    function FeedbackConnection(port::Integer)
-        @info "Starting feedback server on port $(port) ..."
-        socket = UDPSocket()
-        bind(socket,IPv4(0),port)
+    function FeedbackConnection(ip::String, port::Integer)
+        command_channel = Channel(1)
         data_channel = Channel(1)
-        ready_channel = Channel{Bool}(1)
-        put!(ready_channel, false)
+        @info "Connecting to feedback server at $(ip):$(port) ..."
+        socket = Sockets.connect(ip, port)
         task = errormonitor(Threads.@spawn feedback_connection_task(socket, 
-                data_channel, ready_channel))
-        feedback_connection = new(socket, task, data_channel, ready_channel)
-        @info "Feedback server started"
+            command_channel, data_channel))
+        feedback_connection = new(task, command_channel, data_channel)
         return feedback_connection
     end
 end
@@ -41,37 +37,31 @@ mutable struct TimeoutError <: Exception
 end
 
 """
-    open_feedback_connection(port::Integer)
+    open_feedback_connection(ip::String, port::Integer)
 
-Open listener for feedback data from the ROS node on the specified port and
-return the `FeedbackConnection`.
+Open a connection to the ROS node and return the `FeedbackConnection`.
 
+The `ip` must be a string formated as `"123.123.123.123"`
 """
-function open_feedback_connection(port::Integer)
-    return FeedbackConnection(port)
+function open_feedback_connection(ip::String, port::Integer)
+    return FeedbackConnection(ip, port)
 end
 
-# This task continuously reads from the UDP port in order to keep the buffer
-# clear. That way, when receive_feedback_data is called, stale data will not be
-# returned. 
-function feedback_connection_task(socket, data_channel, ready_channel)
+function feedback_connection_task(socket, command_channel, data_channel)
+    @info "Feedback connection task spawned"
     while true
-        payload = nothing
-        try
-            payload = recv(socket)
-        catch e
-            # socket was closed, end the task
+        command = take!(command_channel)
+        if command === :close
+            @info "Closing feedback connection ..."
             break
         end
-        
-        if fetch(ready_channel)
-            _ = take!(ready_channel)
-            put!(ready_channel, false)
-            put!(data_channel, payload)
-        else
-            @debug "Feedback data discarded"
-        end
+        msg = """{ "action": "get_feedback_data" }\n"""
+        write(socket, msg)
+        data = readline(socket)
+        put!(data_channel, data)
     end
+    close(socket)
+    @info "Feedback connection task completed"
 end
 
 """
@@ -91,11 +81,10 @@ exception.
 """
 function receive_feedback_data(feedback_connection::FeedbackConnection,
                                 timeout::Real = 10.0)
-    _ = take!(feedback_connection.ready_channel)
-    put!(feedback_connection.ready_channel, true)
     t = Timer(_ -> timeout_callback(feedback_connection), timeout)
     feedback_data = nothing
     try
+        put!(feedback_connection.command_channel, :read)
         payload = take!(feedback_connection.data_channel)
         data = JSON.parse(String(payload))
         feedback_data = FeedbackData(data)
@@ -117,15 +106,15 @@ function timeout_callback(feedback_connection::FeedbackConnection)
 end
 
 """
-close_feedback_connection(feedback_connection::FeedbackConnection)
+    close_feedback_connection(feedback_connection::FeedbackConnection)
 
-Close the listener.
+Close the connection with the ROS node.
 """
 function close_feedback_connection(feedback_connection::FeedbackConnection)
     @info "Stopping feedback server ..."
-    close(feedback_connection.socket)
+    put!(feedback_connection.command_channel, :close)
     wait(feedback_connection.task)
     close(feedback_connection.data_channel)
-    close(feedback_connection.ready_channel)
+    close(feedback_connection.command_channel)
     @info "Feedback server stopped"
 end

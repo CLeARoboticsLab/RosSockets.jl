@@ -6,11 +6,12 @@ using RosSockets
 
 function run_example()
 
-    port = 42422    # port to listen for ROS data on
+    ip = "192.168.1.135"    # ip address of the host of the ROS node
+    port = 42422            # port to connect on
     timeout = 10.0  # maximum seconds to wait for data with receive_feedback_data
 
     # Open listener for feedback data from the ROS node
-    feedback_connection = open_feedback_connection(port)
+    feedback_connection = open_feedback_connection(ip, port)
 
     # Wait for data to arrive from the ROS node. Execution is blocked while
     # waiting, up to the timout duration provided. If the timeout duration
