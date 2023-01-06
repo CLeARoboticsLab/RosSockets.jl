@@ -1,10 +1,11 @@
 name = "RosSockets"
 uuid = "f2b1035b-1fed-4502-a057-be66ed18c291"
 authors = ["Jacob Levy"]
-version = "0.2.2"
+version = "0.3.0"
 
 [deps]
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Sockets = "6462fe0b-24de-5631-8697-dd941f90decc"
 
 [compat]

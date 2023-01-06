@@ -28,13 +28,13 @@ function run_example()
     # initialize a plotter to display trajectory solution real-time
     display(plot(xlims=(-1,4),ylims=(-1,4),size=(600,600)))
 
-    # Open listener for feedback data from the ROS node
-    feedback_port = 42422   # port to listen for ROS data on
+    # Open a connection to the ROS feedback node
+    ip = "192.168.1.135"    # ip address of the host of the ROS node
+    feedback_port = 42422   # port to connect on
     timeout = 10.0          # maximum seconds to wait for data with receive_feedback_data
-    feedback_connection = open_feedback_connection(feedback_port)
+    feedback_connection = open_feedback_connection(ip, feedback_port)
 
     # open a connection to the ROS velocity control node
-    ip = "192.168.1.135"    # ip address of the host of the ROS node
     control_port = 42421    # port to connect on
     robot_connection = open_robot_connection(ip, control_port)
 
