@@ -37,19 +37,16 @@ mutable struct TimeoutError <: Exception
 end
 
 """
-    open_feedback_connection(port::Integer)
+    open_feedback_connection(ip::String, port::Integer)
 
-Open listener for feedback data from the ROS node on the specified port and
-return the `FeedbackConnection`.
+Open a connection to the ROS node and return the `FeedbackConnection`.
 
+The `ip` must be a string formated as `"123.123.123.123"`
 """
 function open_feedback_connection(ip::String, port::Integer)
     return FeedbackConnection(ip, port)
 end
 
-# This task continuously reads from the UDP port in order to keep the buffer
-# clear. That way, when receive_feedback_data is called, stale data will not be
-# returned. 
 function feedback_connection_task(socket, command_channel, data_channel)
     @info "Feedback connection task spawned"
     while true
@@ -109,9 +106,9 @@ function timeout_callback(feedback_connection::FeedbackConnection)
 end
 
 """
-close_feedback_connection(feedback_connection::FeedbackConnection)
+    close_feedback_connection(feedback_connection::FeedbackConnection)
 
-Close the listener.
+Close the connection with the ROS node.
 """
 function close_feedback_connection(feedback_connection::FeedbackConnection)
     @info "Stopping feedback server ..."
