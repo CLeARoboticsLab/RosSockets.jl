@@ -10,22 +10,31 @@ function test_velocity_control()
     port = 42450
     channel = Channel(1)
     server = listen(port)
-    errormonitor(@async begin
+    t = errormonitor(@async begin
         sock = accept(server)
         payload = readline(sock)
         put!(channel, payload)
         close(sock)
     end)
+    @test !istaskfailed(t)
 
     # connect to localhost, send data, then close the connection
     robot_connection = open_robot_connection(ip, port)
+    @test !istaskfailed(robot_connection.task)
+    @test !istaskdone(robot_connection.task)
+
     send_control_commands(robot_connection, commands)
+
     close_robot_connection(robot_connection, stop_robot=false)
+    @test istaskdone(robot_connection.task)
 
     # take the data from the channel and compare it to the sent data
     received_payload = take!(channel)
     data = JSON.parse(received_payload)
+    @test haskey(data, "controls")
     @test data["controls"] == commands
+
+    close(server)
 end
 
 function test_state_feedback()
@@ -36,28 +45,41 @@ function test_state_feedback()
     data["angular_vel"] = [.4,.5,.6]
     feedback_data = FeedbackData(data)
     
-    ip = ip"127.0.0.1"
+    # create a server on localhost that listens for a connection, reads a
+    # command, writes feedback data, and puts the received command on a channel
+    ip = "127.0.0.1"
     port = 42450
-    timeout = 10.0
+    timeout = 5.0
+
     channel = Channel(1)
-
-    # create a task that opens a feedback connection, recieves data, and then
-    # closes the connection
-    feedback_connection = open_feedback_connection(port)
-    task = errormonitor(@async begin
-        received_feedback_data = receive_feedback_data(feedback_connection, timeout)
-        put!(channel, received_feedback_data)
-        close_feedback_connection(feedback_connection)
+    server = listen(port)
+    t = errormonitor(@async begin
+        sock = accept(server)
+        payload = readline(sock)
+        put!(channel, payload)
+        write(sock,JSON.json(data)*"\n")
+        close(sock)
     end)
+    @test !istaskfailed(t)
 
-    # send data to the feedback connection and compare the received data to the
-    # sent data
-    sleep(1.0)
-    sock = UDPSocket()
-    send(sock, ip, port, JSON.json(data))
-    received_feedback_data = take!(channel)
-    wait(task)
+    # open a feedback connection, recieve data, and then close the connection
+    feedback_connection = open_feedback_connection(ip, port)
+    @test !istaskfailed(feedback_connection.task)
+    @test !istaskdone(feedback_connection.task)
+
+    received_feedback_data = receive_feedback_data(feedback_connection, timeout)
     @test received_feedback_data == feedback_data
+
+    close_feedback_connection(feedback_connection)
+    @test istaskdone(feedback_connection.task)
+
+    # check that the command sent to the feedback server is correct
+    received_payload = take!(channel)
+    json_cmd = JSON.parse(received_payload)
+    @test haskey(json_cmd, "action")
+    @test json_cmd["action"] == "get_feedback_data"
+
+    close(server)
 end
 
 function Base.:(==)(x::FeedbackData, y::FeedbackData) 
@@ -67,7 +89,12 @@ function Base.:(==)(x::FeedbackData, y::FeedbackData)
             x.angular_vel == y.angular_vel
 end
 
-@testset "RosSockets.jl" begin
-    test_velocity_control()
-    test_state_feedback()
+@testset verbose = true "RosSockets.jl" begin
+    @testset "Velocity Control" begin
+        test_velocity_control()
+    end
+
+    @testset "State Feedback" begin
+        test_state_feedback()
+    end
 end
