@@ -34,7 +34,6 @@ function robot_connection_task(channel, socket)
         end
         msg = """{ "controls": $(controls) }\n"""
         write(socket, msg)
-        @info "Control commands sent"
     end
     close(socket)
     @info "Robot connection task completed"
