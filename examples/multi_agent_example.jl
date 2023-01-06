@@ -87,7 +87,7 @@ function run_example()
 
     # open feedback and velocity control connections for each agent
     for agent in agents
-        agent.feedback_connection = open_feedback_connection(agent.feedback_port)
+        agent.feedback_connection = open_feedback_connection(IP, agent.feedback_port)
         agent.robot_connection = open_robot_connection(IP, agent.control_port)
     end
 
