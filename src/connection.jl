@@ -15,6 +15,8 @@ struct Connection
     end
 end
 
+struct TimeoutError <: Exception end
+
 function open_connection(ip::String, port::Integer)
     return Connection(ip, port)
 end
@@ -38,15 +40,15 @@ function connection_task(socket, command_channel, data_channel)
     @info "Connection task completed"
 end
 
-function send(connection::Connection, command::String)
-    put!(connection.command_channel, (:send, command))
+function send(connection::Connection, msg::String)
+    put!(connection.command_channel, (:send, msg))
 end
 
-function send_receive(connection::Connection, command::String, timeout::Real = 10.0)
+function send_receive(connection::Connection, msg::String, timeout::Real = 10.0)
     t = Timer(_ -> timeout_callback(connection), timeout)
     payload = nothing
     try
-        put!(connection.command_channel, (:send_receive, command))
+        put!(connection.command_channel, (:send_receive, msg))
         payload = take!(connection.data_channel)
     catch e
         if typeof(e) != InvalidStateException

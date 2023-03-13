@@ -62,7 +62,7 @@ function test_state_feedback()
     end)
     @test !istaskfailed(t)
 
-    # open a feedback connection, recieve data, and then close the connection
+    # open a feedback connection, receive data, and then close the connection
     feedback_connection = open_feedback_connection(ip, port)
     @test !istaskfailed(feedback_connection.task)
     @test !istaskdone(feedback_connection.task)
