@@ -21,7 +21,7 @@ end
 
 Open a connection to the ROS node and return the `FeedbackConnection`.
 
-The `ip` must be a string formated as `"123.123.123.123"`
+The `ip` must be a string formatted as `"123.123.123.123"`
 """
 function open_feedback_connection(ip::String, port::Integer)
     return open_connection(ip, port)
@@ -33,7 +33,7 @@ end
 
 Waits for data to arrive from the ROS node and returns a struct of the data with
 the following fields: position, orientation, linear_vel, angular_vel. This
-function blocks execution while waiting, up to the timout duration provided. If
+function blocks execution while waiting, up to the timeout duration provided. If
 the timeout duration elapses without the arrival of data, throws a TimeoutError
 exception.
 
