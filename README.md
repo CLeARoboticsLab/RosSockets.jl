@@ -3,7 +3,7 @@
 [![RosSockets](https://github.com/CLeARoboticsLab/RosSockets.jl/actions/workflows/test.yml/badge.svg)](https://github.com/CLeARoboticsLab/RosSockets.jl/actions/workflows/test.yml)
 
 Tools for sending and receiving information from ROS via TCP that can be used to control robots.
-This package is meant to communicate with the ROS nodes from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets).
+This package is meant to communicate with the ROS nodes from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets), but also provides a framework for communication with TCP server in general.
 
 ## Installation
 
@@ -81,6 +81,52 @@ When complete with tasks, be sure to close the connection:
 
 ```jl
 close_feedback_connection(feedback_connection)
+```
+
+### General TCP Communication
+
+First, open a connection to the TCP server, setting setting `ip` and `port` to match that of the server:
+
+```jl
+ip = "192.168.1.135"   
+port = 42423
+connection = open_connection(ip, port)
+```
+
+Send messages with `send`. Note: some TCP servers may be require the message be formatted a certain way (such as JSON), and may also require an end of line character, such as `\n`, to terminate the message. Here is an example of sending a JSON formatted message:
+
+```jl
+import JSON
+
+# create a JSON formatted message with property name "action" and value "start_experiment"
+start_cmd = JSON.json(Dict("action" => "start_experiment")) * "\n"
+
+# send the message
+send(connection, start_cmd)
+```
+
+Send a message and wait for a response with `send_receive`. Note: some TCP servers may be require the message be formatted a certain way (such as JSON), and may also require an end of line character, such as `\n`, to terminate the message. This function blocks execution while waiting, up to the timeout duration provided. If the timeout duration elapses without the arrival of data, throws a `TimeoutError` exception. Note: the payload which is returned will be in a raw format. To convert to a string, use `String(payload)`. This string may further converted to other formats such as JSON. Here is an example of sending a JSON formatted message, receiving a response, and parsing the response.
+
+```jl
+import JSON
+
+# create a JSON formatted message with property name "action" and value "get_time_elapsed"
+get_time_cmd = JSON.json(Dict("action" => "get_time_elapsed")) * "\n"
+
+# send the message and wait for a response
+payload = send_receive(connection, get_time_cmd)
+
+# convert the payload to a String, parse the String as a JSON, extract the data, 
+# and print it
+data = JSON.parse(String(payload))
+elapsed_time = data["elapsed_time"]
+println("Elapsed time: $(elapsed_time)")
+```
+
+When complete with tasks, be sure to close the connection:
+
+```jl
+close_connection(connection)
 ```
 
 ## Acknowledgments
