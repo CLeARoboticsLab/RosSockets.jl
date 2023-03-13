@@ -33,7 +33,7 @@ mutable struct FeedbackConnection
     end
 end
 
-mutable struct TimeoutError <: Exception
+struct TimeoutError <: Exception
 end
 
 """
