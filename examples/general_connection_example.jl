@@ -5,7 +5,7 @@ function test_time_server()
     ip = "192.168.1.135"    # ip address of the host of the ROS node    
     port = 42423            # port to connect on
 
-    # open a connection to the ROS node
+    # open a connection to a TCP server
     connection = open_connection(ip, port)
 
     # create command strings that are in the form of JSONs. These strings should
@@ -15,10 +15,10 @@ function test_time_server()
     stop_cmd = JSON.json(Dict("action" => "stop_experiment")) * "\n"
     get_time_cmd = JSON.json(Dict("action" => "get_time_elapsed")) * "\n"
 
-    # send a command to the ROS node
+    # send a command to the TCP server
     send(connection, start_cmd)
 
-    # send a command and wait to receive a response from the ROS node
+    # send commands and wait to receive responses from the server
     for _ in 1:10
         payload = send_receive(connection, get_time_cmd)
         data = JSON.parse(String(payload))
@@ -27,11 +27,11 @@ function test_time_server()
         sleep(0.5)
     end
 
-    # send another command to the ROS node
+    # send another command to the TCP server
     send(connection, stop_cmd)
     sleep(1.0)
 
-    # Close the connection to the ROS node. This should always be called when
+    # Close the connection to the TCP server. This should always be called when
     # complete with tasks to ensure graceful shutdown.
     close_connection(connection)
 end
