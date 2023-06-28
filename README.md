@@ -7,51 +7,61 @@ This package is meant to communicate with the ROS nodes from [ros_sockets](https
 
 ## Installation
 
-Add the package in Julia with:
+Install the package in Julia with:
 
 ```jl
 using Pkg
-Pkg.add(url="https://github.com/CLeARoboticsLab/RosSockets.jl.git")
+Pkg.add("RosSockets")
 ```
-
-Note: if you have issues authenticating with github, download and unzip the package manually, then add it with:
-
-```jl
-using Pkg
-Pkg.develop(path="<PATH>")
-```
-
-where `<PATH>` is the path to the unzipped file (i.e. the folder containing `Project.toml`).
 
 ## Usage
 
 See [examples](examples/) for usage examples.
 
-### Velocity Control
+### General TCP Communication
 
-First, ensure the `/velocity_control` node from from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets) is running on the target.
-
-Open a connection to the ROS node, setting `ip` and `port` to match that of the node:
+First, open a connection to the TCP server, setting setting `ip` and `port` to match that of the server:
 
 ```jl
-ip = "192.168.88.128"
-port = 42421
-robot_connection = open_robot_connection(ip, port)
+ip = "192.168.1.135"   
+port = 42423
+connection = open_connection(ip, port)
 ```
 
-With an open connection, send velocity commands to the robot:
+Send messages with `send`. Note: some TCP servers may be require the message be formatted a certain way (such as JSON), and may also require an end of line character, such as `\n`, to terminate the message. Here is an example of sending a JSON formatted message:
 
 ```jl
-send_control_commands(robot_connection, controls)
+import JSON
+
+# create a JSON formatted message with property name "action" and value "start_experiment"
+const START_CMD = JSON.json(Dict("action" => "start_experiment")) * "\n"
+
+# send the message
+send(connection, START_CMD)
 ```
 
-where `controls` is a collection of vectors; each vector is a pair of linear and angular velocities.
-The ROS node will execute the controls at the rate it was configure with.
-
-When complete with tasks, be sure to close the connection to ensure a graceful shutdown:
+Send a message and wait for a response with `send_receive`. Note: some TCP servers may be require the message be formatted a certain way (such as JSON), and may also require an end of line character, such as `\n`, to terminate the message. This function blocks execution while waiting, up to the timeout duration provided. If the timeout duration elapses without the arrival of data, throws a `TimeoutError` exception. Note: the payload which is returned will be in a raw format. To convert to a string, use `String(payload)`. This string may further converted to other formats such as JSON. Here is an example of sending a JSON formatted message, receiving a response, and parsing the response.
 
 ```jl
-close_robot_connection(robot_connection)
+import JSON
+
+# create a JSON formatted message with property name "action" and value "get_time_elapsed"
+const GET_TIME_CMD = JSON.json(Dict("action" => "get_time_elapsed")) * "\n"
+
+# send the message and wait for a response
+payload = send_receive(connection, GET_TIME_CMD)
+
+# convert the payload to a String, parse the String as a JSON, extract the data, 
+# and print it
+data = JSON.parse(String(payload))
+elapsed_time = data["elapsed_time"]
+println("Elapsed time: $(elapsed_time)")
+```
+
+When complete with tasks, be sure to close the connection:
+
+```jl
+close_connection(connection)
 ```
 
 ### State Feedback
@@ -83,50 +93,31 @@ When complete with tasks, be sure to close the connection:
 close_feedback_connection(feedback_connection)
 ```
 
-### General TCP Communication
+### Velocity Control
 
-First, open a connection to the TCP server, setting setting `ip` and `port` to match that of the server:
+First, ensure the `/velocity_control` node from from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets) is running on the target.
+
+Open a connection to the ROS node, setting `ip` and `port` to match that of the node:
 
 ```jl
-ip = "192.168.1.135"   
-port = 42423
-connection = open_connection(ip, port)
+ip = "192.168.88.128"
+port = 42421
+robot_connection = open_robot_connection(ip, port)
 ```
 
-Send messages with `send`. Note: some TCP servers may be require the message be formatted a certain way (such as JSON), and may also require an end of line character, such as `\n`, to terminate the message. Here is an example of sending a JSON formatted message:
+With an open connection, send velocity commands to the robot:
 
 ```jl
-import JSON
-
-# create a JSON formatted message with property name "action" and value "start_experiment"
-start_cmd = JSON.json(Dict("action" => "start_experiment")) * "\n"
-
-# send the message
-send(connection, start_cmd)
+send_control_commands(robot_connection, controls)
 ```
 
-Send a message and wait for a response with `send_receive`. Note: some TCP servers may be require the message be formatted a certain way (such as JSON), and may also require an end of line character, such as `\n`, to terminate the message. This function blocks execution while waiting, up to the timeout duration provided. If the timeout duration elapses without the arrival of data, throws a `TimeoutError` exception. Note: the payload which is returned will be in a raw format. To convert to a string, use `String(payload)`. This string may further converted to other formats such as JSON. Here is an example of sending a JSON formatted message, receiving a response, and parsing the response.
+where `controls` is a collection of vectors; each vector is a pair of linear and angular velocities.
+The ROS node will execute the controls at the rate it was configure with.
+
+When complete with tasks, be sure to close the connection to ensure a graceful shutdown:
 
 ```jl
-import JSON
-
-# create a JSON formatted message with property name "action" and value "get_time_elapsed"
-get_time_cmd = JSON.json(Dict("action" => "get_time_elapsed")) * "\n"
-
-# send the message and wait for a response
-payload = send_receive(connection, get_time_cmd)
-
-# convert the payload to a String, parse the String as a JSON, extract the data, 
-# and print it
-data = JSON.parse(String(payload))
-elapsed_time = data["elapsed_time"]
-println("Elapsed time: $(elapsed_time)")
-```
-
-When complete with tasks, be sure to close the connection:
-
-```jl
-close_connection(connection)
+close_robot_connection(robot_connection)
 ```
 
 ## Acknowledgments
