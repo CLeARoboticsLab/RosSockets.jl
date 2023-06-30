@@ -17,5 +17,8 @@ export FeedbackData,
     open_feedback_connection,
     receive_feedback_data,
     close_feedback_connection
+    
+include("rollout_data.jl")
+export rollout_data
 
 end # module RosSockets

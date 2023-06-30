@@ -93,6 +93,37 @@ When complete with tasks, be sure to close the connection:
 close_feedback_connection(feedback_connection)
 ```
 
+### Obtaining Rollout Data
+
+Here, we obtain rollout data (timestamps, states, desired states, and controls) from the `/rollout_data` node from from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets).
+
+First, ensure the `/rollout_data` node from from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets) is running on the target.
+
+Open a connection to the ROS node, setting `ip` and `port` to match that of the node:
+
+```jl
+ip = "192.168.88.128"
+port = 42425
+rollout_data_connection = open_connection(ip, port)
+```
+
+With the connection open, wait for data to arrive from the ROS node.
+Execution is blocked while waiting, up to the timeout duration (seconds) provided.
+If the timeout duration elapses without the arrival of data, a TimeoutError exception is thrown.
+
+```jl
+timeout = 10.0
+data = rollout_data(rollout_data_connection, timeout)
+```
+
+`rollout_data` returns a named tuple with the following fields: `ts`, `xs`, `xds`, `us`.
+
+When complete with tasks, be sure to close the connection:
+
+```jl
+close_connection(rollout_data_connection)
+```
+
 ### Velocity Control
 
 First, ensure the `/velocity_control` node from from [ros_sockets](https://github.com/CLeARoboticsLab/ros_sockets) is running on the target.
